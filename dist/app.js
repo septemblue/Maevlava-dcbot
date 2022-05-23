@@ -27,10 +27,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = __importStar(require("discord.js"));
+const fs_1 = __importDefault(require("fs"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 // initial bot need
-const client = new discord_js_1.Client({ intents: ["GUILDS", "GUILD_MESSAGES"] });
+const client = new discord_js_1.Client({ intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MESSAGE_REACTIONS"] });
 client.once("ready", () => {
     var _a;
     console.log(`Client Ready ${(_a = client.user) === null || _a === void 0 ? void 0 : _a.tag}!`);
@@ -49,9 +50,30 @@ client.on("messageCreate", (message) => {
         const introEmbed = new discord_js_1.default.MessageEmbed()
             .setTitle("Maevlava Bot")
             .setDescription("Personal bot for Maevlava")
-            .setFields({ name: "Functions", value: "1. DM\n2.Embed\n3. Send to Specific Channel" })
+            .setFields({ name: "Functions", value: "1. DM\n2.Embed\n3. Send to Specific Channel\n4. Commands" })
             .setImage("https://i.pinimg.com/564x/a7/46/fb/a746fb1edf92f4bc62809b548c3424f9.jpg");
         message.author.send({ embeds: [introEmbed] });
+    }
+});
+// Command
+client.commands = new discord_js_1.Collection();
+const commandFiles = fs_1.default.readdirSync('./src/commands/').filter(file => file.endsWith(".ts"));
+commandFiles.map(file => {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.name, command);
+});
+client.on("messageCreate", (message) => {
+    var _a;
+    const prefix = "!";
+    if (!message.content.startsWith(prefix) || message.author.bot)
+        return;
+    const args = message.content.slice(prefix.length).split(/ +/);
+    const command = (_a = args.shift()) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+    if (command === "ping") {
+        client.commands.get('ping').execute(message, args);
+    }
+    else if (command === "yutub") {
+        client.commands.get('youtube').execute(message, args);
     }
 });
 // Login from .env bot token
